@@ -3,3 +3,8 @@
 *.playground
 *.cov
 deps/usr/build/
+deps/usr/share/
+deps/usr/bin/patchelf
+deps/src/
+deps/downloads/
+

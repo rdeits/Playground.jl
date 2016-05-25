@@ -1,5 +1,6 @@
 using BuildExecutable
 import Playground
+import BinDeps
 
 # Get our current working path
 deps_dir = dirname(@__FILE__)
@@ -8,7 +9,23 @@ deps_dir = dirname(@__FILE__)
 build_dir = joinpath(deps_dir, "usr", "build")
 mkpath(build_dir)
 
-build_script = "script.jl"
+@unix_only begin
+    ENV["PATH"] = ENV["PATH"] * ":" * joinpath(deps_dir, "usr", "bin")
+    if BuildExecutable.find_patchelf() == nothing
+        downloads_dir = joinpath(deps_dir, "downloads")
+        src_dir = joinpath(deps_dir, "src")
+        mkpath(downloads_dir)
+        mkpath(src_dir)
+        patchelf_gz_file = joinpath(downloads_dir, "patchelf-0.9.tar.gz")
+        run(BinDeps.lower(BinDeps.FileDownloader("http://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.gz", patchelf_gz_file)))
+        run(BinDeps.lower(BinDeps.FileUnpacker(patchelf_gz_file, joinpath(deps_dir, "src"), "")))
+        run(BinDeps.lower(BinDeps.AutotoolsDependency(srcdir=joinpath(src_dir, "patchelf-0.9"), prefix=joinpath(deps_dir, "usr"), builddir=joinpath(src_dir, "patchelf-0.9"), libtarget=joinpath(src_dir, "patchelf-0.9", "src", "patchelf"))))
+    end
+end
+
+
+
+build_script = joinpath(deps_dir, "script.jl")
 
 # Actually build the playground executable
 info("Trying to build playground executable in $build_dir ...")
